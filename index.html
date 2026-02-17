@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Assinaturas</title>
+    <!-- Adicionar Supabase JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* (mesmo CSS do código anterior) */
+    </style>
+</head>
+<body>
+    <!-- (mesmo HTML do código anterior) -->
+    
+    <script>
+        // CONFIGURAÇÃO DO SUPABASE - COLOQUE SUAS CHAVES AQUI!
+        const SUPABASE_URL = 'https://seu-projeto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sua-chave-anon-aqui';
+        
+        // Inicializar Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Variáveis globais
+        let assinantes = [];
+        let testes = [];
+        let transacoes = [];
+        let saldoAtual = 0;
+        let faturamentoHistorico = 0;
+
+        // Carregar dados do Supabase
+        async function carregarDados() {
+            try {
+                // Carregar assinantes
+                const { data: assinantesData, error: assinantesError } = await supabase
+                    .from('assinantes')
+                    .select('*');
+                if (assinantesError) throw assinantesError;
+                assinantes = assinantesData || [];
+
+                // Carregar testes
+                const { data: testesData, error: testesError } = await supabase
+                    .from('testes')
+                    .select('*');
+                if (testesError) throw testesError;
+                testes = testesData || [];
+
+                // Carregar transações
+                const { data: transacoesData, error: transacoesError } = await supabase
+                    .from('transacoes')
+                    .select('*')
+                    .order('data', { ascending: false });
+                if (transacoesError) throw transacoesError;
+                transacoes = transacoesData || [];
+
+                // Carregar faturamento
+                const { data: faturamentoData, error: faturamentoError } = await supabase
+                    .from('faturamento')
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
+                
+                if (faturamentoData) {
+                    saldoAtual = faturamentoData.saldo_atual || 0;
+                    faturamentoHistorico = faturamentoData.total_historico || 0;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+            
+            atualizarTudo();
+        }
+
+        // Salvar dados no Supabase
+        async function salvarDados() {
+            try {
+                // Atualizar faturamento
+                await supabase
+                    .from('faturamento')
+                    .upsert({
+                        id: 1,
+                        saldo_atual: saldoAtual,
+                        total_historico: faturamentoHistorico,
+                        updated_at: new Date().toISOString()
+                    });
+            } catch (error) {
+                console.error('Erro ao salvar dados:', error);
+            }
+        }
+
+        // Adicionar teste
+        async function adicionarTeste() {
+            const nome = document.getElementById('testeNome').value;
+            const email = document.getElementById('testeEmail').value;
+
+            if (!nome || !email) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+
+            const novoTeste = {
+                nome,
+                email,
+                data_inicio: new Date().toISOString(),
+                dias_restantes: 15
+            };
+
+            const { data, error } = await supabase
+                .from('testes')
+                .insert([novoTeste])
+                .select();
+
+            if (!error && data) {
+                await carregarDados(); // Recarregar tudo
+                document.getElementById('testeNome').value = '';
+                document.getElementById('testeEmail').value = '';
+            } else {
+                alert('Erro ao adicionar teste: ' + error.message);
+            }
+        }
+
+        // Adicionar assinante
+        async function adicionarAssinante() {
+            const nome = document.getElementById('assinanteNome').value;
+            const email = document.getElementById('assinanteEmail').value;
+            const valor = parseFloat(document.getElementById('assinanteValor').value) || 0;
+            const vitalicio = document.getElementById('vitalicioCheck').checked;
+
+            if (!nome || !email || (!vitalicio && !valor)) {
+                alert('Preencha todos os campos necessários!');
+                return;
+            }
+
+            const novoAssinante = {
+                nome,
+                email,
+                valor: vitalicio ? 0 : valor,
+                tipo: vitalicio ? 'vitalicio' : 'mensal',
+                data_inicio: new Date().toISOString(),
+                dias_restantes: vitalicio ? 9999 : 30,
+                ultimo_pagamento: new Date().toISOString()
+            };
+
+            const { data, error } = await supabase
+                .from('assinantes')
+                .insert([novoAssinante])
+                .select();
+
+            if (!error && data) {
+                // Registrar transação se for mensal
+                if (!vitalicio) {
+                    await supabase.from('transacoes').insert([{
+                        data: new Date().toISOString(),
+                        cliente: nome,
+                        tipo: 'nova_assinatura',
+                        valor: valor
+                    }]);
+                    
+                    saldoAtual += valor;
+                    faturamentoHistorico += valor;
+                    await salvarDados();
+                }
+                
+                await carregarDados();
+                
+                document.getElementById('assinanteNome').value = '';
+                document.getElementById('assinanteEmail').value = '';
+                document.getElementById('assinanteValor').value = '';
+                document.getElementById('vitalicioCheck').checked = false;
+            } else {
+                alert('Erro ao adicionar assinante: ' + error.message);
+            }
+        }
+
+        // Mover teste para assinante
+        async function moverParaAssinante(idTeste) {
+            const teste = testes.find(t => t.id === idTeste);
+            if (!teste) return;
+
+            const valor = prompt('Digite o valor da assinatura:');
+            if (!valor) return;
+
+            const tipo = prompt('Digite o tipo (mensal ou vitalicio):').toLowerCase();
+            if (tipo !== 'mensal' && tipo !== 'vitalicio') {
+                alert('Tipo inválido!');
+                return;
+            }
+
+            const novoAssinante = {
+                nome: teste.nome,
+                email: teste.email,
+                valor: tipo === 'vitalicio' ? 0 : parseFloat(valor),
+                tipo: tipo,
+                data_inicio: new Date().toISOString(),
+                dias_restantes: tipo === 'vitalicio' ? 9999 : 30,
+                ultimo_pagamento: new Date().toISOString()
+            };
+
+            // Inserir assinante
+            const { error: insertError } = await supabase
+                .from('assinantes')
+                .insert([novoAssinante]);
+
+            if (!insertError) {
+                // Remover dos testes
+                await supabase.from('testes').delete().eq('id', idTeste);
+                
+                // Registrar transação se mensal
+                if (tipo === 'mensal') {
+                    await supabase.from('transacoes').insert([{
+                        data: new Date().toISOString(),
+                        cliente: teste.nome,
+                        tipo: 'conversao_teste',
+                        valor: parseFloat(valor)
+                    }]);
+                    
+                    saldoAtual += parseFloat(valor);
+                    faturamentoHistorico += parseFloat(valor);
+                    await salvarDados();
+                }
+                
+                await carregarDados();
+            }
+        }
+
+        // Remover teste
+        async function removerTeste(id) {
+            if (confirm('Tem certeza que deseja remover este teste?')) {
+                await supabase.from('testes').delete().eq('id', id);
+                await carregarDados();
+            }
+        }
+
+        // Remover assinante
+        async function removerAssinante(id) {
+            if (confirm('Tem certeza que deseja remover este assinante?')) {
+                await supabase.from('assinantes').delete().eq('id', id);
+                await carregarDados();
+            }
+        }
+
+        // Realizar saque
+        async function realizarSaque() {
+            const valorSaque = parseFloat(document.getElementById('valorSaque').value);
+            
+            if (!valorSaque || valorSaque <= 0) {
+                alert('Digite um valor válido!');
+                return;
+            }
+
+            if (valorSaque > saldoAtual) {
+                alert('Saldo insuficiente!');
+                return;
+            }
+
+            if (confirm(`Confirmar saque de R$ ${valorSaque.toFixed(2)}?`)) {
+                saldoAtual -= valorSaque;
+                
+                await supabase.from('transacoes').insert([{
+                    data: new Date().toISOString(),
+                    cliente: 'Saque',
+                    tipo: 'saque',
+                    valor: -valorSaque
+                }]);
+                
+                await salvarDados();
+                await carregarDados();
+                document.getElementById('valorSaque').value = '';
+            }
+        }
+
+        // Atualizar temporizadores
+        async function atualizarTemporizadores() {
+            const hoje = new Date();
+            
+            // Atualizar testes
+            for (const teste of testes) {
+                const dataInicio = new Date(teste.data_inicio);
+                const diasPassados = Math.floor((hoje - dataInicio) / (1000 * 60 * 60 * 24));
+                const diasRestantes = Math.max(0, 15 - diasPassados);
+                
+                if (teste.dias_restantes !== diasRestantes) {
+                    await supabase
+                        .from('testes')
+                        .update({ dias_restantes: diasRestantes })
+                        .eq('id', teste.id);
+                }
+            }
+
+            // Atualizar assinantes
+            for (const assinante of assinantes) {
+                if (assinante.tipo !== 'vitalicio') {
+                    const ultimoPagamento = new Date(assinante.ultimo_pagamento);
+                    const diasPassados = Math.floor((hoje - ultimoPagamento) / (1000 * 60 * 60 * 24));
+                    const diasRestantes = Math.max(0, 30 - diasPassados);
+                    
+                    if (assinante.dias_restantes !== diasRestantes) {
+                        await supabase
+                            .from('assinantes')
+                            .update({ dias_restantes: diasRestantes })
+                            .eq('id', assinante.id);
+                    }
+                }
+            }
+        }
+
+        // Funções de renderização (mesmas do código anterior)
+        function renderizarTestes() {
+            const tbody = document.getElementById('testesBody');
+            tbody.innerHTML = '';
+
+            testes.sort((a, b) => a.dias_restantes - b.dias_restantes).forEach(teste => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${teste.nome}</td>
+                    <td>${teste.email}</td>
+                    <td><span class="timer ${teste.dias_restantes <= 0 ? 'expired' : ''}">${teste.dias_restantes} dias</span></td>
+                    <td>${new Date(teste.data_inicio).toLocaleDateString()}</td>
+                    <td class="action-buttons">
+                        <button onclick="moverParaAssinante(${teste.id})">Mover para Assinante</button>
+                        <button onclick="removerTeste(${teste.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarAssinantes() {
+            const tbody = document.getElementById('assinantesBody');
+            tbody.innerHTML = '';
+
+            assinantes.forEach(assinante => {
+                const tr = document.createElement('tr');
+                const proximoPagamento = new Date(assinante.ultimo_pagamento);
+                proximoPagamento.setDate(proximoPagamento.getDate() + 30);
+                
+                tr.innerHTML = `
+                    <td>${assinante.nome}</td>
+                    <td>${assinante.email}</td>
+                    <td>R$ ${parseFloat(assinante.valor).toFixed(2)}</td>
+                    <td>${assinante.tipo === 'vitalicio' ? 'Vitalício' : 'Mensal'}</td>
+                    <td><span class="timer ${assinante.dias_restantes <= 0 ? 'expired' : ''}">${assinante.tipo === 'vitalicio' ? '∞' : assinante.dias_restantes + ' dias'}</span></td>
+                    <td>${assinante.tipo === 'vitalicio' ? '-' : proximoPagamento.toLocaleDateString()}</td>
+                    <td class="action-buttons">
+                        <button onclick="removerAssinante(${assinante.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarTransacoes() {
+            const tbody = document.getElementById('transacoesBody');
+            tbody.innerHTML = '';
+
+            transacoes.slice(0, 10).forEach(transacao => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(transacao.data).toLocaleDateString()}</td>
+                    <td>${transacao.cliente}</td>
+                    <td>${transacao.tipo === 'nova_assinatura' ? 'Nova Assinatura' : 
+                           transacao.tipo === 'conversao_teste' ? 'Conversão de Teste' : 
+                           transacao.tipo === 'saque' ? 'Saque' : transacao.tipo}</td>
+                    <td style="color: ${transacao.valor > 0 ? '#28a745' : '#dc3545'}">
+                        R$ ${Math.abs(transacao.valor).toFixed(2)}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizarEstatisticas() {
+            document.getElementById('totalAssinantes').textContent = assinantes.length;
+            document.getElementById('totalTestes').textContent = testes.length;
+            document.getElementById('faturamentoAtual').textContent = `R$ ${saldoAtual.toFixed(2)}`;
+            document.getElementById('saldoDisponivel').textContent = `R$ ${saldoAtual.toFixed(2)}`;
+            document.getElementById('faturamentoHistorico').textContent = `R$ ${faturamentoHistorico.toFixed(2)}`;
+        }
+
+        async function atualizarTudo() {
+            await atualizarTemporizadores();
+            await carregarDados(); // Recarrega para pegar as atualizações
+            renderizarTestes();
+            renderizarAssinantes();
+            renderizarTransacoes();
+            atualizarEstatisticas();
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            
+            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        }
+
+        function toggleVitalicio() {
+            const vitalicio = document.getElementById('vitalicioCheck').checked;
+            const valorInput = document.getElementById('assinanteValor');
+            valorInput.disabled = vitalicio;
+            if (vitalicio) {
+                valorInput.value = '';
+            }
+        }
+
+        // Inicializar
+        carregarDados();
+        
+        // Atualizar a cada minuto
+        setInterval(atualizarTudo, 60000);
+    </script>
+</body>
+</html>
