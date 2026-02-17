@@ -1,92 +1,331 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Assinaturas</title>
+    <!-- Adicionar Supabase JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial; padding: 20px; background: #f0f2f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
-        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .active { background: #45a049; }
-        .hidden { display: none; }
-        .tab { display: inline-block; padding: 10px 20px; background: #ddd; cursor: pointer; }
-        .tab.active { background: #4CAF50; color: white; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #764ba2;
+        }
+
+        .tab-content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 10px 10px 10px;
+            min-height: 500px;
+        }
+
+        .form-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #764ba2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #5a3d7c;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .timer {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .timer.expired {
+            color: #dc3545;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .card .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .withdraw-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-buttons button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc3545;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Gerenciador de Assinaturas</h1>
-        
-        <div>
-            <span class="tab active" onclick="mostrarAba('testes')">Testes</span>
-            <span class="tab" onclick="mostrarAba('assinantes')">Assinantes</span>
-            <span class="tab" onclick="mostrarAba('faturamento')">Faturamento</span>
+        <header>
+            <h1>📊 Gerenciador de Assinaturas</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalAssinantes">0</div>
+                    <div class="stat-label">Assinantes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTestes">0</div>
+                    <div class="stat-label">Testes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="faturamentoAtual">R$ 0</div>
+                    <div class="stat-label">Faturamento Atual</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('testes')">Testes Grátis</button>
+            <button class="tab" onclick="showTab('assinantes')">Assinantes</button>
+            <button class="tab" onclick="showTab('faturamento')">Faturamento</button>
         </div>
 
-        <!-- ABA TESTES -->
-        <div id="abaTestes">
-            <h2>Adicionar Teste</h2>
-            <input type="text" id="testeNome" placeholder="Nome">
-            <input type="email" id="testeEmail" placeholder="Email">
-            <button onclick="adicionarTeste()">Adicionar Teste</button>
-            
-            <table>
+        <div class="tab-content" id="tab-testes">
+            <h2>Adicionar Novo Teste</h2>
+            <div class="form-section">
+                <input type="text" id="testeNome" placeholder="Nome do cliente">
+                <input type="email" id="testeEmail" placeholder="Email">
+                <button onclick="adicionarTeste()">Adicionar Teste (15 dias)</button>
+            </div>
+
+            <h2>Testes Ativos</h2>
+            <table id="tabelaTestes">
                 <thead>
                     <tr>
                         <th>Nome</th>
                         <th>Email</th>
                         <th>Dias Restantes</th>
+                        <th>Início</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="listaTestes"></tbody>
+                <tbody id="testesBody">
+                    <tr><td colspan="5" class="loading">Carregando...</td></tr>
+                </tbody>
             </table>
         </div>
 
-        <!-- ABA ASSINANTES -->
-        <div id="abaAssinantes" style="display:none">
-            <h2>Adicionar Assinante</h2>
-            <input type="text" id="assinanteNome" placeholder="Nome">
-            <input type="email" id="assinanteEmail" placeholder="Email">
-            <input type="number" id="assinanteValor" placeholder="Valor" step="0.01">
-            <label>
-                <input type="checkbox" id="vitalicio" onclick="toggleVitalicio()"> Vitalício
-            </label>
-            <button onclick="adicionarAssinante()">Adicionar Assinante</button>
-            
-            <table>
+        <div class="tab-content hidden" id="tab-assinantes">
+            <h2>Adicionar Novo Assinante</h2>
+            <div class="form-section">
+                <input type="text" id="assinanteNome" placeholder="Nome do cliente">
+                <input type="email" id="assinanteEmail" placeholder="Email">
+                <input type="number" id="assinanteValor" placeholder="Valor mensal" step="0.01" min="0">
+                <div class="checkbox-label">
+                    <input type="checkbox" id="vitalicioCheck" onchange="toggleVitalicio()">
+                    <label>Vitalício (sem data)</label>
+                </div>
+                <button onclick="adicionarAssinante()">Adicionar Assinante</button>
+            </div>
+
+            <h2>Assinantes Ativos</h2>
+            <table id="tabelaAssinantes">
                 <thead>
                     <tr>
                         <th>Nome</th>
                         <th>Email</th>
                         <th>Valor</th>
                         <th>Tipo</th>
+                        <th>Dias Restantes</th>
+                        <th>Próximo Pagamento</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="listaAssinantes"></tbody>
+                <tbody id="assinantesBody">
+                    <tr><td colspan="7" class="loading">Carregando...</td></tr>
+                </tbody>
             </table>
         </div>
 
-        <!-- ABA FATURAMENTO -->
-        <div id="abaFaturamento" style="display:none">
-            <h2>Faturamento</h2>
-            <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 10px; margin: 10px 0;">
-                <h3>Saldo Disponível: R$ <span id="saldo">0.00</span></h3>
-                <input type="number" id="valorSaque" placeholder="Valor do saque" step="0.01">
-                <button onclick="sacar()">Sacar</button>
+        <div class="tab-content hidden" id="tab-faturamento">
+            <div class="card">
+                <h3>💰 Saldo Disponível</h3>
+                <div class="value" id="saldoDisponivel">R$ 0,00</div>
+                
+                <div class="withdraw-section">
+                    <input type="number" id="valorSaque" placeholder="Valor para sacar" step="0.01" min="0">
+                    <button onclick="realizarSaque()">Sacar</button>
+                </div>
             </div>
-            
-            <div style="background: #2196F3; color: white; padding: 20px; border-radius: 10px; margin: 10px 0;">
-                <h3>Total Histórico: R$ <span id="total">0.00</span></h3>
+
+            <div class="card">
+                <h3>📈 Histórico de Faturamento</h3>
+                <div class="value" id="faturamentoHistorico">R$ 0,00</div>
+                <small>Total ganho desde o início</small>
             </div>
-            
-            <h3>Últimas Transações</h3>
-            <table>
+
+            <h2>Últimas Transações</h2>
+            <table id="tabelaTransacoes">
                 <thead>
                     <tr>
                         <th>Data</th>
@@ -95,263 +334,473 @@
                         <th>Valor</th>
                     </tr>
                 </thead>
-                <tbody id="listaTransacoes"></tbody>
+                <tbody id="transacoesBody">
+                    <tr><td colspan="4" class="loading">Carregando...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
 
-    <script>
-        // CONFIGURAÇÃO SUPABASE
-        const supabase = window.supabase.createClient(
-            'https://jppaocfnsossquegmxjm.supabase.co',
-            'sb_publishable_rImP_fInaz3rhW8SIwlzsg_xydsF4R5'
-        );
+    <div id="notification" class="notification"></div>
 
-        // DADOS
-        let testes = [];
+    <script>
+        // CONFIGURAÇÃO DO SUPABASE - SUA CHAVE JÁ ESTÁ AQUI!
+        const SUPABASE_URL = 'https://jppaocfnsossquegmxjm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcGFvY2Zuc29zc3F1ZWdteGptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMDIyNzQsImV4cCI6MjA4Njg3ODI3NH0.CgKtnT6Qizn37jI4ttWaE0_Ig6tLHVjr1urcmW7V1jE';
+        
+        // Inicializar Supabase - forma correta
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Variáveis globais
         let assinantes = [];
+        let testes = [];
         let transacoes = [];
         let saldoAtual = 0;
-        let totalHistorico = 0;
+        let faturamentoHistorico = 0;
 
-        // FUNÇÃO PARA MOSTRAR ABAS
-        window.mostrarAba = function(aba) {
+        // Função para mostrar notificações
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Mostrar aba selecionada
+        function showTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             
-            document.getElementById('abaTestes').style.display = 'none';
-            document.getElementById('abaAssinantes').style.display = 'none';
-            document.getElementById('abaFaturamento').style.display = 'none';
-            
-            if (aba === 'testes') document.getElementById('abaTestes').style.display = 'block';
-            if (aba === 'assinantes') document.getElementById('abaAssinantes').style.display = 'block';
-            if (aba === 'faturamento') document.getElementById('abaFaturamento').style.display = 'block';
+            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
         }
 
-        window.toggleVitalicio = function() {
-            const valor = document.getElementById('assinanteValor');
-            valor.disabled = document.getElementById('vitalicio').checked;
+        // Toggle campos vitalício
+        function toggleVitalicio() {
+            const vitalicio = document.getElementById('vitalicioCheck').checked;
+            const valorInput = document.getElementById('assinanteValor');
+            valorInput.disabled = vitalicio;
+            if (vitalicio) {
+                valorInput.value = '';
+            }
         }
 
-        // CARREGAR DADOS
+        // Carregar dados do Supabase
         async function carregarDados() {
             try {
-                const { data: a } = await supabase.from('assinantes').select('*');
-                const { data: t } = await supabase.from('testes').select('*');
-                const { data: tr } = await supabase.from('transacoes').select('*').order('data', { ascending: false });
-                const { data: f } = await supabase.from('faturamento').select('*').eq('id', 1).single();
+                // Carregar assinantes
+                const { data: assinantesData, error: assinantesError } = await supabaseClient
+                    .from('assinantes')
+                    .select('*')
+                    .order('id', { ascending: false });
+                    
+                if (assinantesError) throw assinantesError;
+                assinantes = assinantesData || [];
+
+                // Carregar testes
+                const { data: testesData, error: testesError } = await supabaseClient
+                    .from('testes')
+                    .select('*')
+                    .order('id', { ascending: false });
+                    
+                if (testesError) throw testesError;
+                testes = testesData || [];
+
+                // Carregar transações
+                const { data: transacoesData, error: transacoesError } = await supabaseClient
+                    .from('transacoes')
+                    .select('*')
+                    .order('data', { ascending: false });
+                    
+                if (transacoesError) throw transacoesError;
+                transacoes = transacoesData || [];
+
+                // Carregar faturamento
+                const { data: faturamentoData, error: faturamentoError } = await supabaseClient
+                    .from('faturamento')
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
                 
-                if (a) assinantes = a;
-                if (t) testes = t;
-                if (tr) transacoes = tr;
-                if (f) {
-                    saldoAtual = f.saldo_atual || 0;
-                    totalHistorico = f.total_historico || 0;
+                if (faturamentoData) {
+                    saldoAtual = faturamentoData.saldo_atual || 0;
+                    faturamentoHistorico = faturamentoData.total_historico || 0;
                 }
-                
-                atualizarTela();
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('Erro ao carregar dados:', error);
+                showNotification('Erro ao carregar dados: ' + error.message, 'error');
+            }
+            
+            atualizarInterface();
+        }
+
+        // Atualizar apenas a interface (sem recarregar dados)
+        function atualizarInterface() {
+            renderizarTestes();
+            renderizarAssinantes();
+            renderizarTransacoes();
+            atualizarEstatisticas();
+        }
+
+        // Salvar faturamento no Supabase
+        async function salvarFaturamento() {
+            try {
+                await supabaseClient
+                    .from('faturamento')
+                    .upsert({
+                        id: 1,
+                        saldo_atual: saldoAtual,
+                        total_historico: faturamentoHistorico,
+                        updated_at: new Date().toISOString()
+                    });
+            } catch (error) {
+                console.error('Erro ao salvar faturamento:', error);
+                showNotification('Erro ao salvar faturamento: ' + error.message, 'error');
             }
         }
 
-        // ATUALIZAR TELA
-        function atualizarTela() {
-            // Atualizar estatísticas
-            document.getElementById('saldo').textContent = saldoAtual.toFixed(2);
-            document.getElementById('total').textContent = totalHistorico.toFixed(2);
-            
-            // Lista de testes
-            let htmlTestes = '';
-            testes.forEach(t => {
-                htmlTestes += `<tr>
-                    <td>${t.nome}</td>
-                    <td>${t.email}</td>
-                    <td>${t.dias_restantes}</td>
-                    <td>
-                        <button onclick="moverAssinante(${t.id})">Mover</button>
-                        <button onclick="removerTeste(${t.id})">Remover</button>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('listaTestes').innerHTML = htmlTestes || '<tr><td colspan="4">Nenhum teste</td></tr>';
-            
-            // Lista de assinantes
-            let htmlAssinantes = '';
-            assinantes.forEach(a => {
-                htmlAssinantes += `<tr>
-                    <td>${a.nome}</td>
-                    <td>${a.email}</td>
-                    <td>R$ ${a.valor}</td>
-                    <td>${a.tipo}</td>
-                    <td><button onclick="removerAssinante(${a.id})">Remover</button></td>
-                </tr>`;
-            });
-            document.getElementById('listaAssinantes').innerHTML = htmlAssinantes || '<tr><td colspan="5">Nenhum assinante</td></tr>';
-            
-            // Lista de transações
-            let htmlTransacoes = '';
-            transacoes.slice(0, 5).forEach(t => {
-                htmlTransacoes += `<tr>
-                    <td>${new Date(t.data).toLocaleDateString()}</td>
-                    <td>${t.cliente}</td>
-                    <td>${t.tipo}</td>
-                    <td>R$ ${Math.abs(t.valor).toFixed(2)}</td>
-                </tr>`;
-            });
-            document.getElementById('listaTransacoes').innerHTML = htmlTransacoes || '<tr><td colspan="4">Nenhuma transação</td></tr>';
-        }
+        // Adicionar teste
+        async function adicionarTeste() {
+            const nome = document.getElementById('testeNome').value.trim();
+            const email = document.getElementById('testeEmail').value.trim();
 
-        // FUNÇÕES PRINCIPAIS
-        window.adicionarTeste = async function() {
-            const nome = document.getElementById('testeNome').value;
-            const email = document.getElementById('testeEmail').value;
-            
             if (!nome || !email) {
-                alert('Preencha todos os campos!');
+                showNotification('Preencha todos os campos!', 'error');
                 return;
             }
-            
-            await supabase.from('testes').insert([{
-                nome, email,
-                data_inicio: new Date(),
+
+            const novoTeste = {
+                nome,
+                email,
+                data_inicio: new Date().toISOString(),
                 dias_restantes: 15
-            }]);
-            
-            document.getElementById('testeNome').value = '';
-            document.getElementById('testeEmail').value = '';
-            carregarDados();
+            };
+
+            const { error } = await supabaseClient
+                .from('testes')
+                .insert([novoTeste]);
+
+            if (!error) {
+                document.getElementById('testeNome').value = '';
+                document.getElementById('testeEmail').value = '';
+                showNotification('Teste adicionado com sucesso!');
+                await carregarDados();
+            } else {
+                showNotification('Erro ao adicionar teste: ' + error.message, 'error');
+            }
         }
 
-        window.adicionarAssinante = async function() {
-            const nome = document.getElementById('assinanteNome').value;
-            const email = document.getElementById('assinanteEmail').value;
+        // Adicionar assinante
+        async function adicionarAssinante() {
+            const nome = document.getElementById('assinanteNome').value.trim();
+            const email = document.getElementById('assinanteEmail').value.trim();
             const valor = parseFloat(document.getElementById('assinanteValor').value) || 0;
-            const vitalicio = document.getElementById('vitalicio').checked;
-            
+            const vitalicio = document.getElementById('vitalicioCheck').checked;
+
             if (!nome || !email || (!vitalicio && !valor)) {
-                alert('Preencha todos os campos!');
+                showNotification('Preencha todos os campos necessários!', 'error');
                 return;
             }
-            
-            await supabase.from('assinantes').insert([{
-                nome, email,
+
+            const novoAssinante = {
+                nome,
+                email,
                 valor: vitalicio ? 0 : valor,
                 tipo: vitalicio ? 'vitalicio' : 'mensal',
-                data_inicio: new Date(),
+                data_inicio: new Date().toISOString(),
                 dias_restantes: vitalicio ? 9999 : 30,
-                ultimo_pagamento: new Date()
-            }]);
-            
-            if (!vitalicio) {
-                await supabase.from('transacoes').insert([{
-                    data: new Date(),
-                    cliente: nome,
-                    tipo: 'Nova Assinatura',
-                    valor: valor
-                }]);
+                ultimo_pagamento: new Date().toISOString()
+            };
+
+            const { error } = await supabaseClient
+                .from('assinantes')
+                .insert([novoAssinante]);
+
+            if (!error) {
+                // Registrar transação se for mensal
+                if (!vitalicio) {
+                    await supabaseClient.from('transacoes').insert([{
+                        data: new Date().toISOString(),
+                        cliente: nome,
+                        tipo: 'nova_assinatura',
+                        valor: valor
+                    }]);
+                    
+                    saldoAtual += valor;
+                    faturamentoHistorico += valor;
+                    await salvarFaturamento();
+                }
                 
-                saldoAtual += valor;
-                totalHistorico += valor;
-                await supabase.from('faturamento').upsert({
-                    id: 1,
-                    saldo_atual: saldoAtual,
-                    total_historico: totalHistorico
-                });
+                document.getElementById('assinanteNome').value = '';
+                document.getElementById('assinanteEmail').value = '';
+                document.getElementById('assinanteValor').value = '';
+                document.getElementById('vitalicioCheck').checked = false;
+                document.getElementById('assinanteValor').disabled = false;
+                
+                showNotification('Assinante adicionado com sucesso!');
+                await carregarDados();
+            } else {
+                showNotification('Erro ao adicionar assinante: ' + error.message, 'error');
             }
-            
-            document.getElementById('assinanteNome').value = '';
-            document.getElementById('assinanteEmail').value = '';
-            document.getElementById('assinanteValor').value = '';
-            document.getElementById('vitalicio').checked = false;
-            document.getElementById('assinanteValor').disabled = false;
-            carregarDados();
         }
 
-        window.moverAssinante = async function(id) {
-            const teste = testes.find(t => t.id === id);
+        // Mover teste para assinante
+        async function moverParaAssinante(idTeste) {
+            const teste = testes.find(t => t.id === idTeste);
             if (!teste) return;
-            
-            const valor = prompt('Valor da assinatura:');
-            const tipo = prompt('Tipo (mensal ou vitalicio):');
-            
-            if (tipo !== 'mensal' && tipo !== 'vitalicio') return;
-            
-            await supabase.from('assinantes').insert([{
-                nome: teste.nome,
-                email: teste.email,
-                valor: tipo === 'vitalicio' ? 0 : parseFloat(valor),
-                tipo: tipo,
-                data_inicio: new Date(),
-                dias_restantes: tipo === 'vitalicio' ? 9999 : 30,
-                ultimo_pagamento: new Date()
-            }]);
-            
-            await supabase.from('testes').delete().eq('id', id);
-            
-            if (tipo === 'mensal') {
-                await supabase.from('transacoes').insert([{
-                    data: new Date(),
-                    cliente: teste.nome,
-                    tipo: 'Conversão',
-                    valor: parseFloat(valor)
-                }]);
-                
-                saldoAtual += parseFloat(valor);
-                totalHistorico += parseFloat(valor);
-                await supabase.from('faturamento').upsert({
-                    id: 1,
-                    saldo_atual: saldoAtual,
-                    total_historico: totalHistorico
-                });
-            }
-            
-            carregarDados();
-        }
 
-        window.removerTeste = async function(id) {
-            if (confirm('Remover teste?')) {
-                await supabase.from('testes').delete().eq('id', id);
-                carregarDados();
-            }
-        }
-
-        window.removerAssinante = async function(id) {
-            if (confirm('Remover assinante?')) {
-                await supabase.from('assinantes').delete().eq('id', id);
-                carregarDados();
-            }
-        }
-
-        window.sacar = async function() {
-            const valor = parseFloat(document.getElementById('valorSaque').value);
+            const valor = prompt('Digite o valor da assinatura (R$):');
+            if (!valor) return;
             
-            if (!valor || valor <= 0 || valor > saldoAtual) {
-                alert('Valor inválido!');
+            const valorNum = parseFloat(valor);
+            if (isNaN(valorNum) || valorNum <= 0) {
+                showNotification('Valor inválido!', 'error');
                 return;
             }
-            
-            saldoAtual -= valor;
-            
-            await supabase.from('transacoes').insert([{
-                data: new Date(),
-                cliente: 'Saque',
-                tipo: 'Saque',
-                valor: -valor
-            }]);
-            
-            await supabase.from('faturamento').upsert({
-                id: 1,
-                saldo_atual: saldoAtual,
-                total_historico: totalHistorico
-            });
-            
-            document.getElementById('valorSaque').value = '';
-            carregarDados();
+
+            const tipo = prompt('Digite o tipo (mensal ou vitalicio):').toLowerCase();
+            if (tipo !== 'mensal' && tipo !== 'vitalicio') {
+                showNotification('Tipo inválido! Use "mensal" ou "vitalicio"', 'error');
+                return;
+            }
+
+            const novoAssinante = {
+                nome: teste.nome,
+                email: teste.email,
+                valor: tipo === 'vitalicio' ? 0 : valorNum,
+                tipo: tipo,
+                data_inicio: new Date().toISOString(),
+                dias_restantes: tipo === 'vitalicio' ? 9999 : 30,
+                ultimo_pagamento: new Date().toISOString()
+            };
+
+            // Inserir assinante
+            const { error: insertError } = await supabaseClient
+                .from('assinantes')
+                .insert([novoAssinante]);
+
+            if (!insertError) {
+                // Remover dos testes
+                await supabaseClient.from('testes').delete().eq('id', idTeste);
+                
+                // Registrar transação se mensal
+                if (tipo === 'mensal') {
+                    await supabaseClient.from('transacoes').insert([{
+                        data: new Date().toISOString(),
+                        cliente: teste.nome,
+                        tipo: 'conversao_teste',
+                        valor: valorNum
+                    }]);
+                    
+                    saldoAtual += valorNum;
+                    faturamentoHistorico += valorNum;
+                    await salvarFaturamento();
+                }
+                
+                showNotification('Teste convertido para assinante com sucesso!');
+                await carregarDados();
+            } else {
+                showNotification('Erro ao converter teste: ' + insertError.message, 'error');
+            }
         }
 
-        // INICIAR
+        // Remover teste
+        async function removerTeste(id) {
+            if (confirm('Tem certeza que deseja remover este teste?')) {
+                const { error } = await supabaseClient.from('testes').delete().eq('id', id);
+                if (!error) {
+                    showNotification('Teste removido com sucesso!');
+                    await carregarDados();
+                } else {
+                    showNotification('Erro ao remover teste: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Remover assinante
+        async function removerAssinante(id) {
+            if (confirm('Tem certeza que deseja remover este assinante?')) {
+                const { error } = await supabaseClient.from('assinantes').delete().eq('id', id);
+                if (!error) {
+                    showNotification('Assinante removido com sucesso!');
+                    await carregarDados();
+                } else {
+                    showNotification('Erro ao remover assinante: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Realizar saque
+        async function realizarSaque() {
+            const valorSaque = parseFloat(document.getElementById('valorSaque').value);
+            
+            if (!valorSaque || valorSaque <= 0) {
+                showNotification('Digite um valor válido!', 'error');
+                return;
+            }
+
+            if (valorSaque > saldoAtual) {
+                showNotification('Saldo insuficiente!', 'error');
+                return;
+            }
+
+            if (confirm(`Confirmar saque de R$ ${valorSaque.toFixed(2)}?`)) {
+                saldoAtual -= valorSaque;
+                
+                await supabaseClient.from('transacoes').insert([{
+                    data: new Date().toISOString(),
+                    cliente: 'Saque',
+                    tipo: 'saque',
+                    valor: -valorSaque
+                }]);
+                
+                await salvarFaturamento();
+                showNotification('Saque realizado com sucesso!');
+                await carregarDados();
+                document.getElementById('valorSaque').value = '';
+            }
+        }
+
+        // Atualizar temporizadores
+        async function atualizarTemporizadores() {
+            const hoje = new Date();
+            let precisaAtualizar = false;
+            
+            // Atualizar testes
+            for (const teste of testes) {
+                const dataInicio = new Date(teste.data_inicio);
+                const diasPassados = Math.floor((hoje - dataInicio) / (1000 * 60 * 60 * 24));
+                const diasRestantes = Math.max(0, 15 - diasPassados);
+                
+                if (teste.dias_restantes !== diasRestantes) {
+                    await supabaseClient
+                        .from('testes')
+                        .update({ dias_restantes: diasRestantes })
+                        .eq('id', teste.id);
+                    precisaAtualizar = true;
+                }
+            }
+
+            // Atualizar assinantes
+            for (const assinante of assinantes) {
+                if (assinante.tipo !== 'vitalicio') {
+                    const ultimoPagamento = new Date(assinante.ultimo_pagamento);
+                    const diasPassados = Math.floor((hoje - ultimoPagamento) / (1000 * 60 * 60 * 24));
+                    const diasRestantes = Math.max(0, 30 - diasPassados);
+                    
+                    if (assinante.dias_restantes !== diasRestantes) {
+                        await supabaseClient
+                            .from('assinantes')
+                            .update({ dias_restantes: diasRestantes })
+                            .eq('id', assinante.id);
+                        precisaAtualizar = true;
+                    }
+                }
+            }
+            
+            if (precisaAtualizar) {
+                await carregarDados();
+            }
+        }
+
+        // Renderizar tabelas
+        function renderizarTestes() {
+            const tbody = document.getElementById('testesBody');
+            
+            if (testes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">Nenhum teste ativo</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            testes.sort((a, b) => a.dias_restantes - b.dias_restantes).forEach(teste => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${teste.nome}</td>
+                    <td>${teste.email}</td>
+                    <td><span class="timer ${teste.dias_restantes <= 0 ? 'expired' : ''}">${teste.dias_restantes} dias</span></td>
+                    <td>${new Date(teste.data_inicio).toLocaleDateString()}</td>
+                    <td class="action-buttons">
+                        <button onclick="moverParaAssinante(${teste.id})">Mover para Assinante</button>
+                        <button onclick="removerTeste(${teste.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarAssinantes() {
+            const tbody = document.getElementById('assinantesBody');
+            
+            if (assinantes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">Nenhum assinante ativo</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            assinantes.forEach(assinante => {
+                const proximoPagamento = new Date(assinante.ultimo_pagamento);
+                proximoPagamento.setDate(proximoPagamento.getDate() + 30);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${assinante.nome}</td>
+                    <td>${assinante.email}</td>
+                    <td>R$ ${parseFloat(assinante.valor).toFixed(2)}</td>
+                    <td>${assinante.tipo === 'vitalicio' ? 'Vitalício' : 'Mensal'}</td>
+                    <td><span class="timer ${assinante.dias_restantes <= 0 ? 'expired' : ''}">${assinante.tipo === 'vitalicio' ? '∞' : assinante.dias_restantes + ' dias'}</span></td>
+                    <td>${assinante.tipo === 'vitalicio' ? '-' : proximoPagamento.toLocaleDateString()}</td>
+                    <td class="action-buttons">
+                        <button onclick="removerAssinante(${assinante.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarTransacoes() {
+            const tbody = document.getElementById('transacoesBody');
+            
+            if (transacoes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">Nenhuma transação</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            transacoes.slice(0, 10).forEach(transacao => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(transacao.data).toLocaleDateString()}</td>
+                    <td>${transacao.cliente}</td>
+                    <td>${transacao.tipo === 'nova_assinatura' ? 'Nova Assinatura' : 
+                           transacao.tipo === 'conversao_teste' ? 'Conversão de Teste' : 
+                           transacao.tipo === 'saque' ? 'Saque' : transacao.tipo}</td>
+                    <td style="color: ${transacao.valor > 0 ? '#28a745' : '#dc3545'}">
+                        R$ ${Math.abs(transacao.valor).toFixed(2)}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizarEstatisticas() {
+            document.getElementById('totalAssinantes').textContent = assinantes.length;
+            document.getElementById('totalTestes').textContent = testes.length;
+            document.getElementById('faturamentoAtual').textContent = `R$ ${saldoAtual.toFixed(2)}`;
+            document.getElementById('saldoDisponivel').textContent = `R$ ${saldoAtual.toFixed(2)}`;
+            document.getElementById('faturamentoHistorico').textContent = `R$ ${faturamentoHistorico.toFixed(2)}`;
+        }
+
+        // Inicializar
         carregarDados();
+        
+        // Atualizar temporizadores a cada minuto
+        setInterval(atualizarTemporizadores, 60000);
     </script>
 </body>
 </html>
