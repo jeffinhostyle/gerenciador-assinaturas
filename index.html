@@ -198,8 +198,8 @@
 
         .loading {
             text-align: center;
-            padding: 50px;
-            font-size: 18px;
+            padding: 20px;
+            font-size: 16px;
             color: #666;
         }
     </style>
@@ -225,9 +225,9 @@
         </header>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('testes')">Testes Grátis</button>
-            <button class="tab" onclick="showTab('assinantes')">Assinantes</button>
-            <button class="tab" onclick="showTab('faturamento')">Faturamento</button>
+            <button class="tab active" onclick="window.showTab('testes')">Testes Grátis</button>
+            <button class="tab" onclick="window.showTab('assinantes')">Assinantes</button>
+            <button class="tab" onclick="window.showTab('faturamento')">Faturamento</button>
         </div>
 
         <div class="tab-content" id="tab-testes">
@@ -336,17 +336,17 @@
         let saldoAtual = 0;
         let faturamentoHistorico = 0;
 
-        // Mostrar aba selecionada
-        function showTab(tab) {
+        // Função para mostrar abas (definida globalmente)
+        window.showTab = function(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             
-            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.querySelector(`.tab[onclick="window.showTab('${tab}')"]`).classList.add('active');
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
         }
 
         // Toggle campos vitalício
-        function toggleVitalicio() {
+        window.toggleVitalicio = function() {
             const vitalicio = document.getElementById('vitalicioCheck').checked;
             const valorInput = document.getElementById('assinanteValor');
             valorInput.disabled = vitalicio;
@@ -428,7 +428,7 @@
         }
 
         // Adicionar teste
-        async function adicionarTeste() {
+        window.adicionarTeste = async function() {
             const nome = document.getElementById('testeNome').value.trim();
             const email = document.getElementById('testeEmail').value.trim();
 
@@ -458,7 +458,7 @@
         }
 
         // Adicionar assinante
-        async function adicionarAssinante() {
+        window.adicionarAssinante = async function() {
             const nome = document.getElementById('assinanteNome').value.trim();
             const email = document.getElementById('assinanteEmail').value.trim();
             const valor = parseFloat(document.getElementById('assinanteValor').value) || 0;
@@ -511,7 +511,7 @@
         }
 
         // Mover teste para assinante
-        async function moverParaAssinante(idTeste) {
+        window.moverParaAssinante = async function(idTeste) {
             const teste = testes.find(t => t.id === idTeste);
             if (!teste) return;
 
@@ -568,7 +568,7 @@
         }
 
         // Remover teste
-        async function removerTeste(id) {
+        window.removerTeste = async function(id) {
             if (confirm('Tem certeza que deseja remover este teste?')) {
                 const { error } = await supabase.from('testes').delete().eq('id', id);
                 if (!error) {
@@ -578,7 +578,7 @@
         }
 
         // Remover assinante
-        async function removerAssinante(id) {
+        window.removerAssinante = async function(id) {
             if (confirm('Tem certeza que deseja remover este assinante?')) {
                 const { error } = await supabase.from('assinantes').delete().eq('id', id);
                 if (!error) {
@@ -588,7 +588,7 @@
         }
 
         // Realizar saque
-        async function realizarSaque() {
+        window.realizarSaque = async function() {
             const valorSaque = parseFloat(document.getElementById('valorSaque').value);
             
             if (!valorSaque || valorSaque <= 0) {
@@ -698,7 +698,7 @@
                 const proximoPagamento = new Date(assinante.ultimo_pagamento);
                 proximoPagamento.setDate(proximoPagamento.getDate() + 30);
                 
-                tr = document.createElement('tr');
+                const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${assinante.nome}</td>
                     <td>${assinante.email}</td>
