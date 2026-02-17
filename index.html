@@ -1,164 +1,45 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Assinaturas</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        body {
-            background: #f0f2f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .stats {
-            display: flex;
-            gap: 30px;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            background: #ddd;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px 5px 0 0;
-        }
-        .tab.active {
-            background: white;
-            font-weight: bold;
-        }
-        .tab-content {
-            background: white;
-            padding: 20px;
-            border-radius: 0 10px 10px 10px;
-            min-height: 400px;
-        }
-        .hidden {
-            display: none;
-        }
-        .form-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 5px;
-        }
-        input, button {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #f5f5f5;
-        }
-        .card {
-            background: #4CAF50;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .withdraw-section {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+        body { font-family: Arial; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .active { background: #45a049; }
+        .hidden { display: none; }
+        .tab { display: inline-block; padding: 10px 20px; background: #ddd; cursor: pointer; }
+        .tab.active { background: #4CAF50; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📊 Gerenciador de Assinaturas</h1>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="totalAssinantes">0</div>
-                    <div>Assinantes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalTestes">0</div>
-                    <div>Testes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="faturamentoAtual">R$ 0</div>
-                    <div>Saldo</div>
-                </div>
-            </div>
-        </header>
-
-        <div class="tabs">
-            <button class="tab active" id="tab1" onclick="mudarAba('testes')">Testes Grátis</button>
-            <button class="tab" id="tab2" onclick="mudarAba('assinantes')">Assinantes</button>
-            <button class="tab" id="tab3" onclick="mudarAba('faturamento')">Faturamento</button>
+        <h1>📊 Gerenciador de Assinaturas</h1>
+        
+        <div>
+            <span class="tab active" onclick="mostrarAba('testes')">Testes</span>
+            <span class="tab" onclick="mostrarAba('assinantes')">Assinantes</span>
+            <span class="tab" onclick="mostrarAba('faturamento')">Faturamento</span>
         </div>
 
-        <div id="conteudo-testes" class="tab-content">
+        <!-- ABA TESTES -->
+        <div id="abaTestes">
             <h2>Adicionar Teste</h2>
-            <div class="form-section">
-                <input type="text" id="testeNome" placeholder="Nome">
-                <input type="email" id="testeEmail" placeholder="Email">
-                <button onclick="adicionarTeste()">Adicionar Teste (15 dias)</button>
-            </div>
+            <input type="text" id="testeNome" placeholder="Nome">
+            <input type="email" id="testeEmail" placeholder="Email">
+            <button onclick="adicionarTeste()">Adicionar Teste</button>
+            
             <table>
                 <thead>
                     <tr>
                         <th>Nome</th>
                         <th>Email</th>
-                        <th>Dias</th>
+                        <th>Dias Restantes</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -166,18 +47,17 @@
             </table>
         </div>
 
-        <div id="conteudo-assinantes" class="tab-content hidden">
+        <!-- ABA ASSINANTES -->
+        <div id="abaAssinantes" style="display:none">
             <h2>Adicionar Assinante</h2>
-            <div class="form-section">
-                <input type="text" id="assinanteNome" placeholder="Nome">
-                <input type="email" id="assinanteEmail" placeholder="Email">
-                <input type="number" id="assinanteValor" placeholder="Valor" step="0.01">
-                <div class="checkbox-label">
-                    <input type="checkbox" id="vitalicioCheck" onchange="toggleVitalicio()">
-                    <label>Vitalício</label>
-                </div>
-                <button onclick="adicionarAssinante()">Adicionar Assinante</button>
-            </div>
+            <input type="text" id="assinanteNome" placeholder="Nome">
+            <input type="email" id="assinanteEmail" placeholder="Email">
+            <input type="number" id="assinanteValor" placeholder="Valor" step="0.01">
+            <label>
+                <input type="checkbox" id="vitalicio" onclick="toggleVitalicio()"> Vitalício
+            </label>
+            <button onclick="adicionarAssinante()">Adicionar Assinante</button>
+            
             <table>
                 <thead>
                     <tr>
@@ -185,7 +65,6 @@
                         <th>Email</th>
                         <th>Valor</th>
                         <th>Tipo</th>
-                        <th>Dias</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -193,19 +72,19 @@
             </table>
         </div>
 
-        <div id="conteudo-faturamento" class="tab-content hidden">
-            <div class="card">
-                <h3>Saldo Disponível</h3>
-                <div style="font-size: 32px;" id="saldoDisponivel">R$ 0,00</div>
-                <div class="withdraw-section">
-                    <input type="number" id="valorSaque" placeholder="Valor para sacar" step="0.01">
-                    <button onclick="sacar()">Sacar</button>
-                </div>
+        <!-- ABA FATURAMENTO -->
+        <div id="abaFaturamento" style="display:none">
+            <h2>Faturamento</h2>
+            <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 10px; margin: 10px 0;">
+                <h3>Saldo Disponível: R$ <span id="saldo">0.00</span></h3>
+                <input type="number" id="valorSaque" placeholder="Valor do saque" step="0.01">
+                <button onclick="sacar()">Sacar</button>
             </div>
-            <div class="card" style="background: #2196F3;">
-                <h3>Total Histórico</h3>
-                <div style="font-size: 32px;" id="totalHistorico">R$ 0,00</div>
+            
+            <div style="background: #2196F3; color: white; padding: 20px; border-radius: 10px; margin: 10px 0;">
+                <h3>Total Histórico: R$ <span id="total">0.00</span></h3>
             </div>
+            
             <h3>Últimas Transações</h3>
             <table>
                 <thead>
@@ -228,35 +107,30 @@
             'sb_publishable_rImP_fInaz3rhW8SIwlzsg_xydsF4R5'
         );
 
-        // VARIÁVEIS GLOBAIS
+        // DADOS
         let testes = [];
         let assinantes = [];
         let transacoes = [];
-        let saldo = 0;
+        let saldoAtual = 0;
         let totalHistorico = 0;
 
-        // FUNÇÕES DE ABA
-        window.mudarAba = function(aba) {
+        // FUNÇÃO PARA MOSTRAR ABAS
+        window.mostrarAba = function(aba) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            event.target.classList.add('active');
             
-            if (aba === 'testes') {
-                document.getElementById('tab1').classList.add('active');
-                document.getElementById('conteudo-testes').classList.remove('hidden');
-            } else if (aba === 'assinantes') {
-                document.getElementById('tab2').classList.add('active');
-                document.getElementById('conteudo-assinantes').classList.remove('hidden');
-            } else {
-                document.getElementById('tab3').classList.add('active');
-                document.getElementById('conteudo-faturamento').classList.remove('hidden');
-            }
+            document.getElementById('abaTestes').style.display = 'none';
+            document.getElementById('abaAssinantes').style.display = 'none';
+            document.getElementById('abaFaturamento').style.display = 'none';
+            
+            if (aba === 'testes') document.getElementById('abaTestes').style.display = 'block';
+            if (aba === 'assinantes') document.getElementById('abaAssinantes').style.display = 'block';
+            if (aba === 'faturamento') document.getElementById('abaFaturamento').style.display = 'block';
         }
 
         window.toggleVitalicio = function() {
-            const check = document.getElementById('vitalicioCheck');
             const valor = document.getElementById('assinanteValor');
-            valor.disabled = check.checked;
-            if (check.checked) valor.value = '';
+            valor.disabled = document.getElementById('vitalicio').checked;
         }
 
         // CARREGAR DADOS
@@ -267,12 +141,11 @@
                 const { data: tr } = await supabase.from('transacoes').select('*').order('data', { ascending: false });
                 const { data: f } = await supabase.from('faturamento').select('*').eq('id', 1).single();
                 
-                assinantes = a || [];
-                testes = t || [];
-                transacoes = tr || [];
-                
+                if (a) assinantes = a;
+                if (t) testes = t;
+                if (tr) transacoes = tr;
                 if (f) {
-                    saldo = f.saldo_atual || 0;
+                    saldoAtual = f.saldo_atual || 0;
                     totalHistorico = f.total_historico || 0;
                 }
                 
@@ -284,57 +157,47 @@
 
         // ATUALIZAR TELA
         function atualizarTela() {
-            // Estatísticas
-            document.getElementById('totalAssinantes').textContent = assinantes.length;
-            document.getElementById('totalTestes').textContent = testes.length;
-            document.getElementById('faturamentoAtual').textContent = `R$ ${saldo.toFixed(2)}`;
-            document.getElementById('saldoDisponivel').textContent = `R$ ${saldo.toFixed(2)}`;
-            document.getElementById('totalHistorico').textContent = `R$ ${totalHistorico.toFixed(2)}`;
+            // Atualizar estatísticas
+            document.getElementById('saldo').textContent = saldoAtual.toFixed(2);
+            document.getElementById('total').textContent = totalHistorico.toFixed(2);
             
-            // Lista de Testes
+            // Lista de testes
             let htmlTestes = '';
             testes.forEach(t => {
-                htmlTestes += `
-                    <tr>
-                        <td>${t.nome}</td>
-                        <td>${t.email}</td>
-                        <td>${t.dias_restantes} dias</td>
-                        <td>
-                            <button onclick="moverParaAssinante(${t.id})">Mover</button>
-                            <button onclick="removerTeste(${t.id})">Remover</button>
-                        </td>
-                    </tr>
-                `;
+                htmlTestes += `<tr>
+                    <td>${t.nome}</td>
+                    <td>${t.email}</td>
+                    <td>${t.dias_restantes}</td>
+                    <td>
+                        <button onclick="moverAssinante(${t.id})">Mover</button>
+                        <button onclick="removerTeste(${t.id})">Remover</button>
+                    </td>
+                </tr>`;
             });
             document.getElementById('listaTestes').innerHTML = htmlTestes || '<tr><td colspan="4">Nenhum teste</td></tr>';
             
-            // Lista de Assinantes
+            // Lista de assinantes
             let htmlAssinantes = '';
             assinantes.forEach(a => {
-                htmlAssinantes += `
-                    <tr>
-                        <td>${a.nome}</td>
-                        <td>${a.email}</td>
-                        <td>R$ ${a.valor.toFixed(2)}</td>
-                        <td>${a.tipo}</td>
-                        <td>${a.tipo === 'vitalicio' ? '∞' : a.dias_restantes + ' dias'}</td>
-                        <td><button onclick="removerAssinante(${a.id})">Remover</button></td>
-                    </tr>
-                `;
+                htmlAssinantes += `<tr>
+                    <td>${a.nome}</td>
+                    <td>${a.email}</td>
+                    <td>R$ ${a.valor}</td>
+                    <td>${a.tipo}</td>
+                    <td><button onclick="removerAssinante(${a.id})">Remover</button></td>
+                </tr>`;
             });
-            document.getElementById('listaAssinantes').innerHTML = htmlAssinantes || '<tr><td colspan="6">Nenhum assinante</td></tr>';
+            document.getElementById('listaAssinantes').innerHTML = htmlAssinantes || '<tr><td colspan="5">Nenhum assinante</td></tr>';
             
-            // Lista de Transações
+            // Lista de transações
             let htmlTransacoes = '';
-            transacoes.slice(0, 10).forEach(t => {
-                htmlTransacoes += `
-                    <tr>
-                        <td>${new Date(t.data).toLocaleDateString()}</td>
-                        <td>${t.cliente}</td>
-                        <td>${t.tipo}</td>
-                        <td>R$ ${Math.abs(t.valor).toFixed(2)}</td>
-                    </tr>
-                `;
+            transacoes.slice(0, 5).forEach(t => {
+                htmlTransacoes += `<tr>
+                    <td>${new Date(t.data).toLocaleDateString()}</td>
+                    <td>${t.cliente}</td>
+                    <td>${t.tipo}</td>
+                    <td>R$ ${Math.abs(t.valor).toFixed(2)}</td>
+                </tr>`;
             });
             document.getElementById('listaTransacoes').innerHTML = htmlTransacoes || '<tr><td colspan="4">Nenhuma transação</td></tr>';
         }
@@ -349,76 +212,69 @@
                 return;
             }
             
-            const { error } = await supabase.from('testes').insert([{
+            await supabase.from('testes').insert([{
                 nome, email,
                 data_inicio: new Date(),
                 dias_restantes: 15
             }]);
             
-            if (!error) {
-                document.getElementById('testeNome').value = '';
-                document.getElementById('testeEmail').value = '';
-                carregarDados();
-            }
+            document.getElementById('testeNome').value = '';
+            document.getElementById('testeEmail').value = '';
+            carregarDados();
         }
 
         window.adicionarAssinante = async function() {
             const nome = document.getElementById('assinanteNome').value;
             const email = document.getElementById('assinanteEmail').value;
             const valor = parseFloat(document.getElementById('assinanteValor').value) || 0;
-            const vitalicio = document.getElementById('vitalicioCheck').checked;
+            const vitalicio = document.getElementById('vitalicio').checked;
             
             if (!nome || !email || (!vitalicio && !valor)) {
                 alert('Preencha todos os campos!');
                 return;
             }
             
-            const novoAssinante = {
+            await supabase.from('assinantes').insert([{
                 nome, email,
                 valor: vitalicio ? 0 : valor,
                 tipo: vitalicio ? 'vitalicio' : 'mensal',
                 data_inicio: new Date(),
                 dias_restantes: vitalicio ? 9999 : 30,
                 ultimo_pagamento: new Date()
-            };
+            }]);
             
-            const { error } = await supabase.from('assinantes').insert([novoAssinante]);
-            
-            if (!error) {
-                if (!vitalicio) {
-                    await supabase.from('transacoes').insert([{
-                        data: new Date(),
-                        cliente: nome,
-                        tipo: 'Nova Assinatura',
-                        valor: valor
-                    }]);
-                    
-                    saldo += valor;
-                    totalHistorico += valor;
-                    await supabase.from('faturamento').upsert({
-                        id: 1,
-                        saldo_atual: saldo,
-                        total_historico: totalHistorico
-                    });
-                }
+            if (!vitalicio) {
+                await supabase.from('transacoes').insert([{
+                    data: new Date(),
+                    cliente: nome,
+                    tipo: 'Nova Assinatura',
+                    valor: valor
+                }]);
                 
-                document.getElementById('assinanteNome').value = '';
-                document.getElementById('assinanteEmail').value = '';
-                document.getElementById('assinanteValor').value = '';
-                document.getElementById('vitalicioCheck').checked = false;
-                document.getElementById('assinanteValor').disabled = false;
-                carregarDados();
+                saldoAtual += valor;
+                totalHistorico += valor;
+                await supabase.from('faturamento').upsert({
+                    id: 1,
+                    saldo_atual: saldoAtual,
+                    total_historico: totalHistorico
+                });
             }
+            
+            document.getElementById('assinanteNome').value = '';
+            document.getElementById('assinanteEmail').value = '';
+            document.getElementById('assinanteValor').value = '';
+            document.getElementById('vitalicio').checked = false;
+            document.getElementById('assinanteValor').disabled = false;
+            carregarDados();
         }
 
-        window.moverParaAssinante = async function(id) {
+        window.moverAssinante = async function(id) {
             const teste = testes.find(t => t.id === id);
             if (!teste) return;
             
-            const valor = prompt('Valor da assinatura (R$):');
-            if (!valor) return;
-            
+            const valor = prompt('Valor da assinatura:');
             const tipo = prompt('Tipo (mensal ou vitalicio):');
+            
             if (tipo !== 'mensal' && tipo !== 'vitalicio') return;
             
             await supabase.from('assinantes').insert([{
@@ -437,15 +293,15 @@
                 await supabase.from('transacoes').insert([{
                     data: new Date(),
                     cliente: teste.nome,
-                    tipo: 'Conversão de Teste',
+                    tipo: 'Conversão',
                     valor: parseFloat(valor)
                 }]);
                 
-                saldo += parseFloat(valor);
+                saldoAtual += parseFloat(valor);
                 totalHistorico += parseFloat(valor);
                 await supabase.from('faturamento').upsert({
                     id: 1,
-                    saldo_atual: saldo,
+                    saldo_atual: saldoAtual,
                     total_historico: totalHistorico
                 });
             }
@@ -470,17 +326,12 @@
         window.sacar = async function() {
             const valor = parseFloat(document.getElementById('valorSaque').value);
             
-            if (!valor || valor <= 0) {
+            if (!valor || valor <= 0 || valor > saldoAtual) {
                 alert('Valor inválido!');
                 return;
             }
             
-            if (valor > saldo) {
-                alert('Saldo insuficiente!');
-                return;
-            }
-            
-            saldo -= valor;
+            saldoAtual -= valor;
             
             await supabase.from('transacoes').insert([{
                 data: new Date(),
@@ -491,7 +342,7 @@
             
             await supabase.from('faturamento').upsert({
                 id: 1,
-                saldo_atual: saldo,
+                saldo_atual: saldoAtual,
                 total_historico: totalHistorico
             });
             
