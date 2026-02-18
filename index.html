@@ -666,14 +666,21 @@
             }
         }
 
+        // *** VERSÃO CORRIGIDA DA FUNÇÃO ***
         // Atualizar temporizadores
         async function atualizarTemporizadores() {
-            const hoje = new Date();
+            // Função auxiliar para "zerar" a hora, minuto, segundo e milissegundo de uma data
+            const startOfDay = (date) => {
+                const newDate = new Date(date);
+                newDate.setHours(0, 0, 0, 0);
+                return newDate;
+            };
+
+            const hoje = startOfDay(new Date());
             let precisaAtualizar = false;
             
-            // Atualizar testes
             for (const teste of testes) {
-                const dataInicio = new Date(teste.data_inicio);
+                const dataInicio = startOfDay(new Date(teste.data_inicio));
                 const diasPassados = Math.floor((hoje - dataInicio) / (1000 * 60 * 60 * 24));
                 const diasRestantes = Math.max(0, 15 - diasPassados);
                 
@@ -686,10 +693,9 @@
                 }
             }
 
-            // Atualizar assinantes
             for (const assinante of assinantes) {
                 if (assinante.tipo !== 'vitalicio') {
-                    const ultimoPagamento = new Date(assinante.ultimo_pagamento);
+                    const ultimoPagamento = startOfDay(new Date(assinante.ultimo_pagamento));
                     const diasPassados = Math.floor((hoje - ultimoPagamento) / (1000 * 60 * 60 * 24));
                     const diasRestantes = Math.max(0, 30 - diasPassados);
                     
